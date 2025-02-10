@@ -1,0 +1,215 @@
+<div class="flex flex-col items-center gap-4 p-4 bg-gray-800 rounded-lg shadow-lg md:flex-row">
+  <div class="flex flex-col items-center w-full gap-2 md:flex-row md:w-auto">
+    <label class="font-semibold text-white">📅 Fecha Inicio:</label>
+    <input
+      type="date"
+      [(ngModel)]="startDate"
+      (change)="onDateChange($event, 'start')"
+      class="px-3 py-2 text-white bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+    />
+  </div>
+  <div class="flex flex-col items-center w-full gap-2 md:flex-row md:w-auto">
+    <label class="font-semibold text-white">📅 Fecha Fin:</label>
+    <input
+      type="date"
+      [(ngModel)]="endDate"
+      (change)="onDateChange($event, 'end')"
+      class="px-3 py-2 text-white bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+    />
+  </div>
+  <button
+    (click)="getCampaigns()"
+    class="px-4 py-2 font-semibold text-white transition duration-200 bg-blue-600 rounded-lg cursor-pointer hover:bg-blue-700"
+  >
+    🔍 Filtrar
+  </button>
+</div>
+
+<div *ngIf="!loading" class="w-full p-8 mt-4 bg-primary rounded-xl">
+  <div class="hidden grid-cols-1 gap-4 p-4 mb-10 md:grid md:grid-cols-6">
+    <h5 class="md:text-center">ID</h5>
+    <h5 class="md:text-center">Nombre</h5>
+    <h5 class="md:text-center">Fecha</h5>
+    <h5 class="md:text-center">Hora</h5>
+    <h5 class="md:text-center">Estado</h5>
+    <h5 class="md:text-center">Acciones</h5>
+  </div>
+  <!-- arreglo de campañas -->
+  <div *ngFor="let campaign of getPaginatedCampaigns()" class="grid items-center grid-cols-1 gap-4 p-4 mb-4 md:grid-cols-6 bg-secondary rounded-xl">
+    <div class="md:text-center">
+      <h5 class="mb-2 font-bold text-white md:hidden">ID</h5>
+      <span>#{{ campaign.id }}</span>
+    </div>
+
+    <div class="md:text-center">
+      <h5 class="mb-2 font-bold text-white md:hidden">Nombre</h5>
+      <span class="line-clamp-1" [title]="campaign.name">{{ campaign.name }}</span>
+    </div>
+
+    <div class="md:text-center">
+      <h5 class="mb-2 font-bold text-white md:hidden">Fecha de Proceso</h5>
+      <span>{{ campaign.process_date | date : 'dd-MM-yyyy' }}</span>
+    </div>
+
+    <div class="md:text-center">
+      <h5 class="mb-2 font-bold text-white md:hidden">Hora de Proceso</h5>
+      <span>{{ campaign.process_hour }}</span>
+    </div>
+
+    <div class="md:text-center">
+      <h5 class="mb-2 font-bold text-white md:hidden">Estado</h5>
+      <span *ngIf="campaign.process_status == 1" class="block w-40 px-3 py-2 mx-auto text-black bg-gray-400 rounded-md">PENDIENTE</span>
+      <span *ngIf="campaign.process_status == 2" class="block w-40 px-3 py-2 mx-auto text-white bg-yellow-500 rounded-md">EN PROCESO</span>
+      <span *ngIf="campaign.process_status == 3" class="block w-40 px-3 py-2 mx-auto text-white bg-red-500 rounded-md">FINALIZADO</span>
+    </div>
+
+    <div class="relative flex items-center justify-center group dropdown-container">
+      <button type="button" (click)="toggleDropdown(campaign.id)" class="flex items-center justify-center gap-3">
+        <h5 class="mb-2 font-bold text-white md:hidden">VER</h5>
+        <lucide-angular [img]="Ellipsis" size="30" class="cursor-pointer group-hover:text-main"></lucide-angular>
+      </button>
+
+      <div *ngIf="dropdownOpen === campaign.id" class="absolute right-0 z-50 w-48 mt-2 text-white bg-gray-800 rounded-md shadow-lg top-full">
+        <ul>
+          <li>
+            <button
+              [disabled]="campaign.process_status != 1 || loadingSendCampaigns"
+              (click)="sendCampaign(campaign.id)"
+              [ngClass]="{ 'bg-gray-700 text-gray-500': campaign.process_status != 1 || loadingSendCampaigns }"
+              class="block w-full px-4 py-2 transition-colors cursor-pointer hover:bg-gray-700"
+            >
+              Enviar campaña
+            </button>
+          </li>
+          <li>
+            <button
+              *ngIf="campaign.process_status != 1"
+              [disabled]="loadingMessages"
+              (click)="viewMessages(campaign.id)"
+              [ngClass]="{ 'bg-gray-700 text-gray-500': loadingMessages }"
+              class="block w-full px-4 py-2 transition-colors cursor-pointer hover:bg-gray-700"
+            >
+              Ver mensajes
+            </button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Paginación -->
+  <div class="flex items-center justify-between mt-6">
+    <button
+      (click)="currentPage = currentPage - 1"
+      [disabled]="currentPage === 1"
+      class="px-4 py-2 text-white transition-colors bg-gray-700 rounded-md cursor-pointer disabled:opacity-50 hover:bg-gray-800"
+    >
+      Anterior
+    </button>
+
+    <span class="text-white"> Página {{ currentPage }} de {{ totalPages() }} </span>
+
+    <button
+      (click)="currentPage = currentPage + 1"
+      [disabled]="currentPage >= totalPages()"
+      class="px-4 py-2 text-white transition-colors bg-gray-700 rounded-md cursor-pointer disabled:opacity-50 hover:bg-gray-800"
+    >
+      Siguiente
+    </button>
+  </div>
+
+  <!-- Contador de registros -->
+  <div class="flex flex-col justify-between gap-5 mt-4 md:flex-row md:gap-0 content_buttons">
+    <p class="ml-1 text-md">{{ totalPosts }} Registros</p>
+  </div>
+  <!-- Modal -->
+  <div *ngIf="modalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div class="p-6 text-center bg-white rounded-lg shadow-lg w-[500px]">
+      <h2 class="mb-4 text-2xl font-bold text-black uppercase">{{ sendingCampaign?.name }}</h2>
+      <p class="mb-4 text-gray-700">
+        <span *ngIf="campaignStatus == '1'" class="block px-3 py-2 mx-auto text-black bg-gray-400 rounded-md w-52">PENDIENTE</span>
+        <span *ngIf="campaignStatus == '2'" class="block px-3 py-2 mx-auto text-white bg-yellow-500 rounded-md w-52">EN PROCESO</span>
+        <span *ngIf="campaignStatus == '3'" class="block px-3 py-2 mx-auto text-white bg-red-500 rounded-md w-52">FINALIZADO</span>
+        <span *ngIf="campaignStatus == 'error'" class="block px-3 py-2 mx-auto text-white bg-red-700 rounded-md w-52"> ERROR EN EL ENVÍO </span>
+        <span *ngIf="campaignStatus == 'Desconocido'" class="block px-3 py-2 mx-auto text-white bg-gray-500 rounded-md w-52">
+          ESTADO DESCONOCIDO
+        </span>
+      </p>
+
+      <ul class="space-y-2">
+        <li *ngFor="let msg of messages" class="flex items-center justify-between py-2 text-black border-b">
+          <span>📩 {{ msg.phone }}</span>
+          <span
+            [ngClass]="{
+              'text-green-600 font-semibold': msg.shipping_status === 2,
+              'text-red-600 font-semibold': msg.shipping_status === 3
+            }"
+          >
+            {{ msg.shipping_status === 2 ? '✅ Enviado' : '❌ Error' }}
+          </span>
+        </li>
+      </ul>
+
+      <button (click)="closeModal()" class="px-4 py-2 mt-4 text-white transition-colors bg-red-500 rounded-lg cursor-pointer hover:bg-red-600">
+        Cerrar
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="modalOpenMessage" class="fixed inset-0 z-50 flex items-center justify-center text-black bg-black/50">
+    <div class="p-6 bg-white rounded-lg shadow-lg w-[800px] max-h-[90vh] overflow-y-auto">
+      <h2 class="mb-4 text-2xl font-bold text-center text-black uppercase">Mensajes de la Campaña</h2>
+
+      <!-- Loading -->
+      <div *ngIf="loadingMessages" class="flex justify-center py-10">
+        <app-loading></app-loading>
+      </div>
+
+      <!-- Lista de Mensajes -->
+      <div *ngIf="!loadingMessages">
+        <div class="overflow-y-auto max-h-80">
+          <table class="w-full text-left border border-gray-300 rounded-lg">
+            <thead class="bg-gray-200">
+              <tr>
+                <th class="p-2 border">ID</th>
+                <th class="p-2 border">Teléfono</th>
+                <th class="p-2 border">Mensaje</th>
+                <th class="p-2 border">Fecha</th>
+                <th class="p-2 border">Hora</th>
+                <th class="p-2 border">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let msg of messagesArray" class="border hover:bg-gray-100">
+                <td class="p-2 font-medium text-center border">#{{ msg.id }}</td>
+                <td class="p-2 text-center border">{{ msg.phone }}</td>
+                <td class="p-2 border text-center truncate max-w-[120px]" title="{{ msg.text }}">{{ msg.text }}</td>
+                <td class="p-2 text-center border">{{ msg.process_date | date : 'dd/MM/yyyy' }}</td>
+                <td class="p-2 text-center border">{{ msg.process_hour }}</td>
+                <td class="p-2 text-center border">
+                  <span
+                    class="px-3 py-1 text-sm font-semibold rounded-md"
+                    [ngClass]="{
+                      'bg-green-100 text-green-600': msg.shipping_status === 2,
+                      'bg-red-100 text-red-600': msg.shipping_status === 3,
+                      'bg-yellow-100 text-yellow-600': msg.shipping_status === 1
+                    }"
+                  >
+                    {{ msg.shipping_status === 2 ? '✅ Enviado' : msg.shipping_status === 3 ? '❌ Error' : '⌛ Pendiente' }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Botón de Cierre -->
+      <div class="flex justify-end mt-6">
+        <button (click)="closeModalMessages()" class="px-5 py-2 text-white transition-colors bg-red-500 rounded-lg hover:bg-red-600">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-loading *ngIf="loading"></app-loading>

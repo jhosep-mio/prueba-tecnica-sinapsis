@@ -1,0 +1,344 @@
+openapi: 3.0.0
+info:
+  title: API de Envío de Campañas Sinapsis
+  description: API para gestionar campañas de marketing y enviar mensajes de texto.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000
+    description: Servidor local
+
+paths:
+  /api/campaigns/create:
+    post:
+      summary: Crear una nueva campaña
+      description: >
+        Este endpoint permite crear una nueva campaña de marketing. Se necesita un objeto JSON
+        que contenga los detalles de la campaña, incluyendo la lista de teléfonos (`phone_list`),
+        que debe enviarse como un string JSON válido. Ejemplo de `phone_list`: `["+51960613700", "+51960613702"]`.
+      operationId: createCampaign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Campaign"
+            example:
+              user_id: 123
+              name: "Campaña de Verano"
+              process_date: "2025-06-01"
+              process_hour: "10:00:00"
+              process_status: 1
+              phone_list: '["+51960613700", "+51960613702"]'  # String con formato JSON
+              message_text: "¡Descuentos de hasta el 50%! Compra ahora."
+      responses:
+        "201":
+          description: Campaña creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+              example:
+                id: 1
+                user_id: 123
+                name: "Campaña de Verano"
+                process_date: "2025-06-01"
+                process_hour: "10:00:00"
+                process_status: 1
+                phone_list: '["+51960613704", "+51960613705"]'  # El teléfono está en formato string JSON
+                message_text: "¡Descuentos de hasta el 50%! Compra ahora."
+        "400":
+          description: Error de validación en la solicitud.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Mensaje de error indicando la causa del problema.
+              example:
+                error: "Faltan datos obligatorios: 'phone_list' debe ser un string con un array JSON válido."
+        "500":
+          description: Error interno del servidor.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Mensaje de error del servidor.
+              example:
+                error: "Error al crear la campaña en la base de datos."
+  /api/campaigns/sendCampaign/{campaignId}:
+    post:
+      summary: Enviar los mensajes de una campaña
+      description: >
+        Este endpoint permite simular el envío de una campaña. Para cada número en la lista de teléfonos,
+        se crea un mensaje con estado "pendiente" y se simula el proceso de envío, cambiando el estado a "enviado" o "fallido".
+      operationId: sendCampaign
+      parameters:
+        - name: campaignId
+          in: path
+          description: El ID de la campaña que se va a enviar.
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Los mensajes de la campaña han sido procesados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Mensaje de éxito.
+                  status:
+                    type: boolean
+                    description: Estado de la operación.
+              example:
+                message: "Campaña enviada"
+                status: true
+        "400":
+          description: Error de validación en el ID de la campaña.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Mensaje de error indicando la causa del problema.
+              example:
+                error: "Campaña no encontrada"
+        "500":
+          description: Error interno del servidor.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Mensaje de error indicando el fallo en el servidor.
+              example:
+                error: "Error en el envío de la campaña."
+  /api/campaigns/getCampaignsByDate:
+    get:
+      summary: Listar campañas dentro de un rango de fechas
+      description: >
+        Este endpoint devuelve una lista de campañas que se han procesado dentro de un rango de fechas
+        específico. Puede filtrar por fecha de inicio y fin, y también puede obtener campañas solo para
+        un usuario específico.
+      operationId: getCampaignsByDate
+      parameters:
+        - name: startDate
+          in: query
+          description: Fecha de inicio para filtrar las campañas (formato: YYYY-MM-DD).
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          description: Fecha de fin para filtrar las campañas (formato: YYYY-MM-DD).
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: user_id
+          in: query
+          description: El ID del usuario para filtrar las campañas.
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lista de campañas que cumplen con el filtro de fecha
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Campaign"
+              example:
+                - id: 1
+                  user_id: 123
+                  name: "Campaña de Prueba"
+                  process_date: "2025-09-01"
+                  process_hour: "10:00:00"
+                  process_status: 1
+                  phone_list: '["+51960613700", "+51960613702"]'
+                  message_text: "¡Descuentos de hasta el 50%! Compra ahora."
+                - id: 2
+                  user_id: 123
+                  name: "Campaña de Navidad"
+                  process_date: "2025-12-01"
+                  process_hour: "09:00:00"
+                  process_status: 1
+                  phone_list: '["+51960613705", "+51960613705"]'
+                  message_text: "¡Felices fiestas! 25% de descuento en productos seleccionados."
+        "400":
+          description: Error de validación en los parámetros de fecha
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Mensaje de error indicando el problema con las fechas.
+              example:
+                error: "La fecha de inicio no puede ser mayor que la fecha de fin."
+        "500":
+          description: Error en el servidor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Mensaje de error indicando el fallo en el servidor.
+              example:
+                error: "Error obteniendo campañas desde la base de datos."
+  /api/messages/getMessagesByCampaign/{campaignId}:
+    get:
+      summary: Obtener los mensajes de una campaña
+      description: >
+        Este endpoint permite obtener todos los mensajes enviados dentro de una campaña específica.
+        Los mensajes incluyen detalles como el número de teléfono, el texto del mensaje y el estado del envío.
+      operationId: getMessagesByCampaign
+      parameters:
+        - name: campaignId
+          in: path
+          description: El ID de la campaña cuyos mensajes se desean obtener.
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lista de mensajes para la campaña.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Message"
+              example:
+                messages:
+                  - id: 1
+                    campaign_id: 1
+                    phone: "+51960613700"
+                    text: "¡Descuentos de hasta el 50%! Compra ahora."
+                    shipping_status: 2
+                    process_date: "2025-09-01"
+                    process_hour: "10:00:00"
+                  - id: 2
+                    campaign_id: 1
+                    phone: "+51960613702"
+                    text: "¡Descuentos de hasta el 50%! Compra ahora."
+                    shipping_status: 1
+                    process_date: "2025-09-01"
+                    process_hour: "10:01:00"
+        "404":
+          description: No se encontraron mensajes para la campaña especificada.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Mensaje de error si no hay mensajes para la campaña.
+              example:
+                error: "No se encontraron mensajes para esta campaña."
+        "500":
+          description: Error interno del servidor.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Mensaje de error si hubo un problema con la consulta.
+              example:
+                error: "Error interno del servidor."
+  
+components:
+  schemas:
+    Campaign:
+      type: object
+      required:
+        - user_id
+        - name
+        - phone_list
+        - message_text
+      properties:
+        id:
+          type: integer
+          description: El ID único de la campaña.
+        user_id:
+          type: integer
+          description: El ID del usuario que está creando la campaña.
+        name:
+          type: string
+          description: El nombre de la campaña.
+        process_date:
+          type: string
+          format: date
+          description: La fecha en la que se debe procesar la campaña.
+        process_hour:
+          type: string
+          format: time
+          description: La hora exacta en la que se debe procesar la campaña.
+        process_status:
+          type: integer
+          description: El estado de la campaña (0: pendiente, 1: en proceso, 2: completada).
+        phone_list:
+          type: string
+          description: Un string con un array JSON válido de números de teléfono. Ejemplo: '["+51960613700", "+51960613702"]'.
+        message_text:
+          type: string
+          description: El mensaje que se enviará a los teléfonos especificados.
+    Message:
+      type: object
+      required:
+        - campaign_id
+        - phone
+        - text
+        - shipping_status
+        - process_date
+        - process_hour
+      properties:
+        id:
+          type: integer
+          description: El ID único del mensaje.
+        campaign_id:
+          type: integer
+          description: El ID de la campaña a la que pertenece el mensaje.
+        phone:
+          type: string
+          description: El número de teléfono al que se enviará el mensaje.
+        text:
+          type: string
+          description: El contenido del mensaje que se enviará.
+        shipping_status:
+          type: integer
+          description: El estado del envío del mensaje (1: pendiente, 2: enviado, 3: error).
+          enum: [1, 2, 3]
+        process_date:
+          type: string
+          format: date
+          description: La fecha en la que se procesará el mensaje.
+        process_hour:
+          type: string
+          format: time
+          description: La hora exacta en la que se procesará el mensaje.

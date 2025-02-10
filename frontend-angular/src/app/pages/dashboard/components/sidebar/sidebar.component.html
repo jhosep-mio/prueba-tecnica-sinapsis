@@ -1,0 +1,45 @@
+<div
+  [ngClass]="{
+    'left-0': showMenu,
+    '-left-full': !showMenu
+  }"
+  class="transition-all xl:h-[96vh] fixed xl:static w-[70%] md:w-[40%] lg:w-[30%] xl:w-auto h-full lg:ml-4 my-auto lg:rounded-2xl bg-primary shadow-xl px-4 pb-4 pt-2 flex flex-col justify-between z-50"
+>
+  <div>
+    <nav class="py-4">
+      <div class="relative mx-auto mb-4 w-fit">
+        <img src="/icono.png" alt="" class="object-cover w-20 h-20 mx-auto border-2 border-gray-800 rounded-full" />
+        <span class="absolute bottom-0 right-0 text-xl text-green-500 animate-pulse">
+          <lucide-angular [img]="IconRadio" class="" size="20"></lucide-angular>
+        </span>
+      </div>
+      <h2 class="text-sm font-bold text-center text-gray-300">{{ auth?.username?.toUpperCase() }}</h2>
+    </nav>
+    <div class="mb-5 h-[1px] w-full bg-gray-500 text-gray-500 block"></div>
+    <ul class="p-0 ml-0">
+      <li>
+        <a
+          routerLink="/sistema"
+          class="flex items-center justify-between w-full px-4 py-2 transition-colors rounded-lg cursor-pointer hover:bg-secondary"
+        >
+          <span class="flex items-center gap-4">
+            <lucide-angular [img]="Wifi" class="text-main" size="18"></lucide-angular>
+            Campañas
+          </span>
+        </a>
+      </li>
+    </ul>
+  </div>
+  <button
+    type=" button"
+    class="flex items-center w-full gap-4 px-4 py-2 transition-colors rounded-lg cursor-pointer hover:bg-secondary"
+    (click)="logout()"
+  >
+    <lucide-angular [img]="LogOut" class="text-main" size="20"></lucide-angular>
+    Cerrar sesión
+  </button>
+  <button type="button" class="fixed z-50 p-3 text-white rounded-full xl:hidden bottom-4 right-4 bg-main">
+    <lucide-angular [img]="Menu" *ngIf="showMenu" size="20"></lucide-angular>
+    <lucide-angular [img]="Menu" *ngIf="!showMenu" size="20"></lucide-angular>
+  </button>
+</div>

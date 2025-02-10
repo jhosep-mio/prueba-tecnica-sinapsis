@@ -1,0 +1,60 @@
+<form [formGroup]="campaignForm" (ngSubmit)="onSubmit()" class="p-8 mt-4 bg-primary rounded-xl">
+  <div class="w-full mb-6 lg:relative">
+    <p class="py-2 pt-0 pb-0 pr-2 mb-0 ml-1 mr-0 -mt-3 font-medium text-white bg-transparent rounded-md lg:pl-2 lg:ml-2 text-md lg:absolute">
+      Nombre de la campaña
+    </p>
+    <input
+      formControlName="name"
+      class="block w-full px-4 py-3 mt-2 mb-0 ml-0 mr-0 text-base placeholder-gray-400 transition-all border border-black rounded-md outline-none focus:outline-none focus:border-black bg-secondary"
+    />
+  </div>
+  <div class="w-full mb-6 lg:relative">
+    <p class="py-2 pt-0 pb-0 pr-2 mb-0 ml-1 mr-0 -mt-3 font-medium text-white bg-transparent rounded-md lg:pl-2 lg:ml-2 text-md lg:absolute">
+      Números de teléfono
+    </p>
+
+    <div class="flex items-center gap-2">
+      <input
+        [formControl]="newPhoneNumberControl"
+        placeholder="+51XXXXXXXXX"
+        class="block w-full px-4 py-3 mt-2 text-base placeholder-gray-400 transition-all border border-black rounded-md outline-none focus:outline-none focus:border-black bg-secondary"
+      />
+      <button type="button" (click)="addPhoneNumber()" class="p-2 text-white transition-colors rounded-md cursor-pointer bg-main hover:bg-mainDark">
+        Agregar
+      </button>
+    </div>
+
+    <ul class="mt-4">
+      <li *ngFor="let phone of phoneList.controls; let i = index" class="flex items-center justify-between p-2 mb-2 bg-gray-700 rounded-md">
+        <input [formControl]="getPhoneControl(i)" class="w-full px-2 py-1 text-white bg-transparent border-none" />
+        <button
+          type="button"
+          (click)="removePhoneNumber(i)"
+          class="p-2 ml-2 text-white transition-colors bg-red-500 rounded-md cursor-pointer hover:bg-red-700"
+        >
+          Eliminar
+        </button>
+      </li>
+    </ul>
+  </div>
+
+  <div class="w-full mb-6 lg:relative">
+    <p class="py-2 pt-0 pb-0 pr-2 mb-0 ml-1 mr-0 -mt-3 font-medium text-white bg-transparent rounded-md lg:pl-2 lg:ml-2 text-md lg:absolute">
+      Mensaje
+    </p>
+    <textarea
+      formControlName="messageText"
+      class="block w-full px-4 py-3 mt-2 mb-0 ml-0 mr-0 text-base placeholder-gray-400 transition-all border border-black rounded-md outline-none resize-none focus:outline-none focus:border-black bg-secondary"
+      placeholder="Escribe tu mensaje aquí"
+    ></textarea>
+  </div>
+  <div class="flex justify-end w-full gap-2">
+    <a routerLink="/sistema" class="px-4 py-2 text-white transition-colors bg-red-500 rounded-md cursor-pointer hover:bg-red-600">Cancelar</a>
+    <button
+      [type]="!loading ? 'submit' : 'button'"
+      class="flex items-center gap-2 px-4 py-2 text-black transition-colors bg-green-500 rounded-lg cursor-pointer hover:bg-green-600"
+    >
+      {{ !loading ? 'Crear' : 'Cargando...' }}
+    </button>
+  </div>
+</form>

@@ -1,0 +1,116 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: jhosep
+service: aws-serverless-sinapsis
+frameworkVersion: '4'
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: us-east-2
+  timeout: 10
+  httpApi:
+    cors:
+      allowedOrigins:
+        - 'http://localhost:4200'
+        - 'https://sinapsis.hostbacon.lat'
+      allowedHeaders:
+        - 'Content-Type'
+        - 'Authorization'
+      allowedMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+      allowCredentials: true
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - rds:DescribeDBInstances
+        - rds-db:connect # Si estás usando RDS Data API
+      Resource: arn:aws:rds:us-east-2:615299747170:db:my-mysql-sinapsis # ARN de la base de datos RDS
+  environment:
+    DB_HOST: ${env:DB_HOST}
+    DB_USER: ${env:DB_USER}
+    DB_PASSWORD: ${env:DB_PASSWORD}
+    DB_NAME: ${env:DB_NAME}
+
+plugins:
+  - serverless-offline # Habilita el modo offline
+
+functions:
+  app:
+    handler: ./src/handler.app
+    events:
+      - httpApi:
+          path: /api/users/register
+          method: post
+      - httpApi:
+          path: /api/campaigns/getAllCampaigns
+          method: get
+      - httpApi:
+          path: /api/campaigns/getCampaignsByDate
+          method: get
+      - httpApi:
+          path: /api/campaigns/{id}
+          method: get
+      - httpApi:
+          path: /api/campaigns/create
+          method: post
+      - httpApi:
+          path: /api/campaigns/sendCampaign/{campaignId}
+          method: post
+      - httpApi:
+          path: /api/messages/getMessagesByCampaign/{campaignId}
+          method: get
+      - httpApi:
+          path: /api/campaigns/filter-by-date
+          method: get
+      - httpApi:
+          path: /api/messages/campaign/{id}
+          method: get
+      - httpApi:
+          path: /api/users/login
+          method: post
+      - httpApi:
+          path: /api/users/profile
+          method: get
+      - httpApi:
+          path: /api-docs/{proxy+}
+          method: get
+
+resources:
+  Resources:
+    MyDatabaseSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: 'Allow Lambda access to RDS'
+        SecurityGroupIngress:
+          - IpProtocol: 'tcp'
+            FromPort: 3306
+            ToPort: 3306
+            CidrIp: '0.0.0.0/0' # ⚠️ Puedes restringir más esto si es necesario
+
+    MyDatabase:
+      Type: AWS::RDS::DBInstance
+      DependsOn: MyDatabaseSecurityGroup
+      Properties:
+        DBInstanceIdentifier: my-mysql-sinapsis
+        Engine: mysql
+        EngineVersion: '8.0'
+        DBInstanceClass: db.t3.micro
+        AllocatedStorage: 20
+        StorageType: gp2
+        PubliclyAccessible: true
+        MasterUsername: admin
+        MasterUserPassword: qwerasd159
+        DBName: sinapsis
+        MultiAZ: false
+        BackupRetentionPeriod: 0
+        DeletionProtection: false
+        VPCSecurityGroups:
+          - Fn::GetAtt: [MyDatabaseSecurityGroup, GroupId]
+
+custom:
+  serverless-offline:
+    httPort: 3000 # Aqui se define el puerto local

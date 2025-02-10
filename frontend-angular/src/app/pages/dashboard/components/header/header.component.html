@@ -1,0 +1,37 @@
+<header class="h-[7vh] md:h-[8vh] border-b border-primary py-8 px-4 md:p-4 flex items-center justify-between bg-primary md:rounded-xl relative">
+  <div class="flex items-center justify-between w-full gap-3 mr-3 md:gap-0 md:w-1/2 md:mr-0">
+    <div class="flex items-center w-full gap-3 text-sm text-gray-400 lg:text-base">
+      <p>{{ date | date : 'shortDate' }}</p>
+      <p>{{ date | date : 'shortTime' }}</p>
+    </div>
+  </div>
+  <nav class="flex items-center gap-2">
+    <div class="relative" *ngIf="auth">
+      <!-- Botón que activa el menú desplegable -->
+      <button class="flex items-center p-2 transition-colors rounded-lg cursor-pointer gap-x-2 hover:bg-secondary" (click)="toggleMenu()">
+        <img src="/icono.png" class="object-contain w-6 h-6 rounded-full" alt="user-avatar" />
+        <lucide-angular [img]="ChevronDown" class="" [ngClass]="{ 'rotate-180': showMenu }" size="20"></lucide-angular>
+      </button>
+      <!-- Menú desplegable -->
+      <div *ngIf="showMenu" class="absolute right-0 z-10 mt-2 rounded-lg shadow-lg bg-primary min-w-[250px]">
+        <div class="p-4">
+          <div class="flex items-center flex-1 px-6 py-2 text-gray-300 transition-colors rounded-lg dropdown-item gap-x-4">
+            <img src="/icono.png" class="object-contain w-8 h-8 rounded-full" alt="user-avatar" />
+            <div class="flex flex-col text-sm">
+              <span class="text-sm text-gray-300">{{ auth.username.toUpperCase() }}</span>
+            </div>
+          </div>
+          <hr class="my-4 border-gray-500" />
+          <button
+            type="button"
+            class="flex items-center flex-1 w-full px-6 py-2 text-gray-300 transition-colors rounded-lg cursor-pointer dropdown-item hover:bg-secondary gap-x-4"
+            (click)="logout()"
+          >
+            <lucide-angular [img]="LogOut" class="" size="20"></lucide-angular>
+            <span class="text-white">Cerrar sesión</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
